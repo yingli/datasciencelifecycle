@@ -1,3 +1,10 @@
 theme: jekyll-theme-minimal
 title: Data Science Life Cycle 
 description: Fall 2022, teaching materials
+
+defaults:
+  -
+    scope:
+      path: "" # an empty string here means all files in the project
+    values:
+      layout: "default"
