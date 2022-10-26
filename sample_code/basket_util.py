@@ -8,8 +8,9 @@ import collections
 from math import floor
 
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler, normalize
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_samples
 
 
 def prep_data(filename, dropna,datecol):
@@ -37,8 +38,8 @@ def prep_data(filename, dropna,datecol):
         baskets["spent"] = baskets["qty"] * baskets["price"]
     return baskets
 
-def make_merchants(baskets):
-    merchants = baskets.groupby(['merchant_id']).agg(
+def get_merchant_attributes(baskets):
+    merchant_attributes = baskets.groupby(['merchant_id']).agg(
         total_spent = ('spent', 'sum'), 
         num_orders = ('order_id', 'nunique'), 
         first_month = ('month_num', 'min'), 
@@ -50,9 +51,9 @@ def make_merchants(baskets):
         num_top_cats = ('top_cat_id','nunique'), 
         num_sub_cats = ('sub_cat_id','nunique'),
     ).reset_index()
-    merchants['avg_spent_per_order'] = merchants.total_spent / merchants.num_orders
-    merchants['tenure_month'] = merchants.last_month - merchants.first_month +1
-    return merchants
+    merchant_attributes['avg_spent_per_order'] = merchant_attributes.total_spent / merchant_attributes.num_orders
+    merchant_attributes['tenure_month'] = merchant_attributes.last_month - merchant_attributes.first_month +1
+    return merchant_attributes
 
 def get_order_attributes(baskets):
     order_attributes = baskets.groupby(['order_id']).agg(
@@ -64,7 +65,7 @@ def get_order_attributes(baskets):
     return order_attributes
 
 def get_sku_attributes(baskets):
-    skus = baskets.groupby(['sku_id']).agg(
+    sku_attributes = baskets.groupby(['sku_id']).agg(
         total_spent = ('spent', 'sum'), 
         num_orders = ('order_id', 'nunique'), 
         num_merchants = ('merchant_id', 'nunique'), 
@@ -76,9 +77,9 @@ def get_sku_attributes(baskets):
         num_weeks = ('week_num', 'nunique'), 
         num_days = ('date', 'nunique'), 
     ).reset_index()
-    skus['avg_spent_per_order'] = skus.total_spent / skus.num_orders
-    skus['tenure_month'] = skus.last_month - skus.first_month +1
-    return skus
+    sku_attributes['avg_spent_per_order'] = sku_attributes.total_spent / sku_attributes.num_orders
+    sku_attributes['tenure_month'] = sku_attributes.last_month - sku_attributes.first_month +1
+    return sku_attributes
 
 def get_skus_by_day(baskets):
     skus_by_day = baskets.groupby(['sku_id','date']).agg(
@@ -100,20 +101,23 @@ def make_top_cats(baskets):
     return top_cats
 
 
-    
-def run_kmeans(df, colnames, k):
+def run_kmeans_old(df, colnames, k):
     df_for_cluster = df.loc[:,colnames]
     stscaler = StandardScaler().fit(df_for_cluster)
     normalized_df = stscaler.transform(df_for_cluster)
-
     kmeans = KMeans(init='k-means++',n_clusters=k,n_init=100, max_iter=300, random_state=0).fit(normalized_df)
     df['cluster'] = kmeans.labels_
     df.groupby("cluster").size()
     return df
 
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler, normalize
-from sklearn.metrics import silhouette_score
+def run_kmeans(df, colnames, k):
+    df_for_cluster = df.loc[:,colnames]
+    stscaler = StandardScaler().fit(df_for_cluster)
+    normalized_df = stscaler.transform(df_for_cluster)
+    kmeans = KMeans(init='k-means++',n_clusters=k,n_init=100, max_iter=300, random_state=0).fit(normalized_df)
+    df['cluster'] = kmeans.labels_
+    df.groupby("cluster").size()
+    return df
 
 def find_elbow(df, colnames, clusters_range):
     df_for_cluster = df.loc[:,colnames]
@@ -130,4 +134,5 @@ def find_elbow(df, colnames, clusters_range):
     plt.xlabel('Number of clusters: k')
     plt.ylabel('inertia')
     plt.show()
+
     return
