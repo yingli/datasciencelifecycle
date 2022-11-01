@@ -1,7 +1,7 @@
 theme: jekyll-theme-minimal
 title: Applied Researcher, Data Science Practitioner
 description: Ying Li
-logo: assets/img/yingli.png
+logo: assets/images/yingli.png
 show_downloads: true
 
 defaults:
